@@ -8,7 +8,13 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
-  session TEXT,
-  service_provider TEXT NOT NULL
+  id INTEGER PRIMARY KEY,
+  session TEXT
+);
+
+CREATE TABLE IF NOT EXISTS sp_sessions (
+  session_id INT NOT NULL,
+  service_provider TEXT NOT NULL,
+  FOREIGN KEY(session_id) REFERENCES sessions(id)
 );
 SuchDatabase
