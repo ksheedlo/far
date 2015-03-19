@@ -1,0 +1,25 @@
+{
+  "name": "sins",
+  "version": "0.0.0",
+  "authors": [
+    "Ken Sheedlo <ken.sheedlo@rackspace.com>"
+  ],
+  "description": "SINS is not SSO",
+  "keywords": [
+    "sso",
+    "saml",
+    "identity",
+    "keyston"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "~3.3.4"
+  }
+}
