@@ -1,4 +1,7 @@
 {
+  "backend": {
+    "backend": "sqlite"
+  },
   "database": "data/sins.sqlite3",
   "service_providers": [{
     "id": "cloud_intelligence_dev",
