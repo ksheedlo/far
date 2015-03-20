@@ -1,7 +1,7 @@
 import json
 import requests
 
-from errors import Http400
+from errors import IdentityError
 
 class IdentityBackend(object):
     def __init__(self, config):
@@ -24,8 +24,11 @@ class IdentityBackend(object):
         r.raise_for_status()
         result = r.json()
         if 'unauthorized' in result:
-            raise Http400('Login attempt failed')
+            raise IdentityError('Login attempt failed')
         return result
+
+    def get_user_id(self, user):
+        return user['access']['token']['tenant']['id']
 
 
 def create(config):

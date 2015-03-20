@@ -1,8 +1,13 @@
 {
   "backend": {
-    "backend": "sqlite"
+    "backend": "identity",
+    "identity_endpoint": "http://localhost:8900/identity/v2.0/tokens"
   },
   "database": "data/sins.sqlite3",
+  "debug": {
+    "use_debugger": true,
+    "use_reloader": true
+  },
   "service_providers": [{
     "id": "cloud_intelligence_dev",
     "public_key": "keys/sage-dev.crt",

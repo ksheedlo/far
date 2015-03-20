@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="login__wrapper">
+  <div class="login__main">
+    <div class="login__heading">
+      <h3 class="login__title">SINS Sign In</h3>
+    </div>
+    <div class="login__body clearfix">
+      <form action="/?{{ post_params }}" method="post">
+        <div class="form-group">
+          <label for="username">Username or email address</label>
+          <input type="text" class="form-control"
+            name="username" id="username">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" class="form-control"
+            name="password" id="password">
+        </div>
+        <div class="pull-right">
+          <input type="hidden" value="{{ next }}" name="next" id="next">
+          <button type="submit" class="btn btn-primary">Sign In</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS sessions (
   id INTEGER PRIMARY KEY,
+  user_id TEXT NOT NULL,
   session TEXT
 );
 

@@ -3,3 +3,5 @@ static/components/
 
 *.pyc
 *.sqlite3
+*.crt
+*.key
