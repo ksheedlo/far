@@ -1,12 +1,16 @@
 {
   "backend": {
     "backend": "identity",
-    "identity_endpoint": "http://localhost:8900/identity/v2.0/tokens"
+    "identity_endpoint": "http://localhost:8900/identity"
   },
   "database": "data/sins.sqlite3",
   "debug": {
     "use_debugger": true,
     "use_reloader": true
+  },
+  "keys": {
+    "ssl_cert": "keys/sins.rax.io.crt",
+    "ssl_key": "keys/sins.rax.io.key"
   },
   "service_providers": [{
     "id": "cloud_intelligence_dev",

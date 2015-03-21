@@ -11,7 +11,7 @@ class MemoryStasher(object):
         self._data[user_id] = data
 
     def lookup(self, user_id):
-        return self._get(user_id)
+        return self._data.get(user_id)
 
 class SessionStasher(object):
     def __init__(self, config):

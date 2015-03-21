@@ -13,7 +13,7 @@ def _find_where(thingies, query):
     return None
 
 class SAMLSecurityConfig(object):
-    def __init__(self, cert_file=None):
+    def __init__(self, cert_file=None, key_file=None):
         self.xmlsec_binary = None
         self.crypto_backend = 'xmlsec1'
         self.only_use_keys_in_metadata = False
@@ -21,7 +21,7 @@ class SAMLSecurityConfig(object):
         self.generate_cert_info = False
         self.cert_handler_extra_class = None
         self.cert_file = cert_file
-        self.key_file = None
+        self.key_file = key_file
         self.tmp_cert_file = None
         self.tmp_key_file = None
         self.validate_certificate = False
