@@ -10,6 +10,7 @@
   },
   "service_providers": [{
     "id": "cloud_intelligence_dev",
+    "issuer": "http://dev.intelligence.rackspace.com",
     "public_key": "keys/sage-dev.crt",
     "login_endpoint": "http://localhost:3000/saml/response",
     "logout_endpoint": "http://localhost:3000/saml/idp_logout",

@@ -11,8 +11,12 @@ import sys
 
 from backends.errors import IdentityError
 from datetime import datetime, timedelta
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import (Flask, abort, redirect, render_template, request,
+                    session, url_for)
+from xml.etree.ElementTree import ParseError as XMLParseError
+from saml2 import samlp
 from sessions import MemoryStasher
+from validation import SAMLValidator, SAMLValidationError
 
 app = Flask(__name__)
 
@@ -27,6 +31,7 @@ with open(args.config or 'config.json', 'r') as f:
 
 backend = backends.identity.create(config)
 stasher = MemoryStasher(config)
+validator = SAMLValidator(config)
 
 def redirect_to_login(saml_request, relay_state):
     return redirect(url_for('login',
@@ -59,6 +64,11 @@ def post_sso():
 def get_sso():
     relay_state = request.args['RelayState']
     saml_response = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+
+    try:
+        saml_request = validator.validate(request.args['SAMLRequest'])
+    except SAMLValidationError as e:
+        return abort(400)
 
     return render_template('redirect.html',
         relay_state=relay_state,
