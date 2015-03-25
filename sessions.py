@@ -42,7 +42,7 @@ class MemoryStasher(object):
 
 class SessionStasher(object):
     def __init__(self, config):
-        self._connection = sqlite3.connect(config.database or 'data/sins.sqlite3')
+        self._connection = sqlite3.connect(config.database or 'data/far.sqlite3')
 
     def stash(self, user_id, data):
         c = self._connection.cursor()

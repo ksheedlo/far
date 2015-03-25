@@ -7,7 +7,7 @@ FIND_USER_QUERY = 'SELECT (name, password, response_body) FROM users WHERE '\
 
 class SqliteBackend(object):
     def __init__(self, config):
-        self._connection = sqlite3.connect(config.database or 'data/sins.sqlite3')
+        self._connection = sqlite3.connect(config.database or 'data/far.sqlite3')
 
     def try_login(self, username, password):
         users = [u for u in self._connection.execute(FIND_USER_QUERY, username)]

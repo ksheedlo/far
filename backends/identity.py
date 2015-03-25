@@ -52,7 +52,7 @@ class IdentityBackend(object):
         """
         username = self.get_username(user)
         headers = {
-            'user-agent': 'Rackspace SINS SSO Double;{0}'.format(username),
+            'user-agent': 'Rackspace FAR SSO Double;{0}'.format(username),
             'x-auth-token': self.get_auth_token(user)
         }
         r = requests.get('{0}/v2.0/users'.format(self._identity_endpoint),

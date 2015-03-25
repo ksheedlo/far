@@ -3,14 +3,14 @@
     "backend": "identity",
     "identity_endpoint": "http://localhost:8900/identity"
   },
-  "database": "data/sins.sqlite3",
+  "database": "data/far.sqlite3",
   "debug": {
     "use_debugger": true,
     "use_reloader": true
   },
   "keys": {
-    "ssl_cert": "keys/sins.rax.io.crt",
-    "ssl_key": "keys/sins.rax.io.key"
+    "ssl_cert": "keys/far.rax.io.crt",
+    "ssl_key": "keys/far.rax.io.key"
   },
   "service_providers": [{
     "id": "cloud_intelligence_dev",

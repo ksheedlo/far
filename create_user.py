@@ -10,7 +10,7 @@ import sys
 
 from passlib.hash import bcrypt
 
-PROGRAM_DESCRIPTION = 'Add a user to the SQLite database used by the SINS' \
+PROGRAM_DESCRIPTION = 'Add a user to the SQLite database used by the FAR' \
     ' SQLite plugin.'
 
 INSERT_QUERY = 'INSERT INTO users (name, password, response_body) ' \
@@ -56,7 +56,7 @@ def main(args):
     password = get_password()
 
     hashed_password = bcrypt.encrypt(password)
-    conn = sqlite3.connect(config.get('database', 'data/sins.sqlite3'))
+    conn = sqlite3.connect(config.get('database', 'data/far.sqlite3'))
     add_user(conn, name, hashed_password, template_contents)
     conn.close()
     return 0

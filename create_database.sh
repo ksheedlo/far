@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sqlite3 data/sins.sqlite3 <<SuchDatabase
+sqlite3 data/far.sqlite3 <<SuchDatabase
 CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL UNIQUE,
   password TEXT NOT NULL,
