@@ -1,16 +1,8 @@
 import base64
 import binascii
 
+from helpers import find_where
 from saml2 import samlp, sigver
-
-def _find_where(thingies, query):
-    for thingie in thingies:
-        found = True
-        for key in query:
-            found = found and key in thingie and thingie[key] == query[key]
-        if found:
-            return thingie
-    return None
 
 class SAMLSecurityConfig(object):
     def __init__(self, cert_file=None, key_file=None):
@@ -35,7 +27,7 @@ class SAMLValidator(object):
     def __init__(self, config):
         self._service_providers = list(config['service_providers'])
 
-    def validate(self, request_xml):
+    def validate_login_request(self, request_xml):
         # Validation largely cribbed from Reach. Thanks Reach!
         try:
             saml_request_xml = base64.decodestring(request_xml)
@@ -84,4 +76,50 @@ class SAMLValidator(object):
         return saml_request
 
     def _get_service_provider(self, issuer):
-        return _find_where(self._service_providers, { 'issuer': issuer })
+        return find_where(self._service_providers, { 'issuer': issuer })
+
+    def validate_logout_request(self, request_xml):
+        try:
+            saml_request_xml = base64.decodestring(request_xml)
+        except binascii.Error as e:
+            raise SAMLValidationError('SAMLRequest contains an invalid base64 string')
+
+        try:
+            saml_request = samlp.logout_request_from_string(saml_request_xml)
+        except XMLParseError as e:
+            raise SAMLValidationError('SAMLRequest contains invalid XML')
+
+        if not saml_request:
+            raise SAMLValidationError('SAML LogoutRequest is malformed')
+
+        issuer = saml_request.issuer.text
+        if not issuer:
+            raise SAMLValidationError('SAML LogoutRequest contains no issuer')
+
+        service_provider = self._get_service_provider(issuer)
+        if not service_provider:
+            raise SAMLValidationError('Invalid issuer: {0}'.format(issuer))
+
+        if not saml_request.signature or not saml_request.signature.signature_value:
+            raise SAMLValidationError('No SAML LogoutRequest signature found')
+
+        saml_request_verified = False
+
+        try:
+            saml_request_verified = saml_request.verify()
+        except Exception as e:
+            raise SAMLValidationError('SAML LogoutRequest verification threw an exception.')
+
+        if not saml_request_verified:
+            raise SAMLValidationError('SAML LogoutRequest verification failed.')
+
+        security_context = sigver.security_context(SAMLSecurityConfig(
+            cert_file=service_provider['public_key']))
+        try:
+            security_context.correctly_signed_authn_request(saml_request_xml)
+        except sigver.SignatureError:
+            raise SAMLValidationError('No SSL configuration worked for ' +
+                'service provider: {sp} with saml request: {xml}'.format(
+                sp=service_provider['id'], xml=saml_request_xml))
+
+        return saml_request

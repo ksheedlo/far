@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 from flask import (Flask, abort, redirect, render_template, request,
                     session, url_for)
 from xml.etree.ElementTree import ParseError as XMLParseError
-from saml2 import class_name, samlp, saml, sigver
+from saml2 import create_class_from_xml_string, class_name, samlp, saml, sigver
 from saml2 import VERSION as SAML2_VERSION
 from sessions import MemoryStasher
 from uuid import uuid1
@@ -59,6 +59,41 @@ def get_name_string(user):
 def datetime_to_iso8601(dt):
     return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
+def generate_session_id():
+    return 'FAR-{0}'.format(uuid1())
+
+def generate_signature_id():
+    return uuid1().int
+
+def security_config_for_signing():
+    return SAMLSecurityConfig(cert_file=config['keys']['ssl_cert'],
+        key_file=config['keys']['ssl_key'])
+
+def sign_saml_document(document):
+    document_type = type(document)
+    signature_id = generate_signature_id()
+
+    security_context = sigver.security_context(security_config_for_signing())
+    document.signature = sigver.pre_signature_part(document.id,
+        security_context.my_cert, signature_id)
+    document = security_context.sign_statement(document.to_string(), class_name(document))
+    return create_class_from_xml_string(document_type, document)
+
+def create_saml_logout_request(issuer_url, session_id, username):
+    issue_instant = datetime.utcnow()
+
+    request = samlp.LogoutRequest()
+    request.id = generate_session_id()
+    request.version = SAML2_VERSION
+    request.issue_instant = datetime_to_iso8601(issue_instant)
+    request.issuer = saml.Issuer(text=issuer_url)
+    request.name_id_policy = samlp.NameIDPolicy(format=samlp.NAMEID_FORMAT_PERSISTENT,
+        allow_create="true")
+    request.session_index = samlp.SessionIndex(session_id)
+    request.name_id = saml.NameID(format=saml.NAMEID_FORMAT_PERSISTENT, text=username)
+    request.not_on_or_after = datetime_to_iso8601(issue_instant + timedelta(minutes=2))
+    return sign_saml_document(request)
+
 def clean_assertion_extensions_attributes(attributes):
     # REACH: According to the W3 Spec (http://www.w3.org/TR/xmlschema-1/#xsi_nil),
     # if xsi:nil is set to true, the element must be empty.  This attribute
@@ -71,7 +106,7 @@ def clean_assertion_extensions_attributes(attributes):
 
     return attributes
 
-def create_saml_response(name_string, request_id, service_url):
+def create_saml_response(name_string, request_id, session_id, service_url):
     issue_instant = datetime_to_iso8601(datetime.now())
 
     response = samlp.Response()
@@ -96,12 +131,12 @@ def create_saml_response(name_string, request_id, service_url):
     authn_statement = saml.AuthnStatement(authn_instant=issue_instant,
         authn_context=saml.AuthnContext(authn_context_class_ref=saml.AuthnContextClassRef(
             text=saml.AUTHN_PASSWORD_PROTECTED)))
+    authn_statement.session_index = session_id
 
     assertion_id = str(uuid1())
     signature_id = 1
 
-    security_context = sigver.security_context(SAMLSecurityConfig(
-        cert_file=config['keys']['ssl_cert'], key_file=config['keys']['ssl_key']))
+    security_context = sigver.security_context(security_config_for_signing())
     signature = sigver.pre_signature_part(assertion_id, security_context.my_cert, signature_id)
 
     response.assertion = saml.Assertion(
@@ -144,7 +179,7 @@ def post_sso():
     if not valid_session():
         return redirect_to_login(saml_request, relay_state)
 
-    user_session = stasher.lookup(session['user_id'])
+    user_session = stasher.lookup_by_session_id(session['session_id'])
     if user_session is None:
         return redirect_to_login(saml_request, relay_state)
 
@@ -154,18 +189,18 @@ def post_sso():
 
 def get_sso():
     relay_state = request.args['RelayState']
-    saml_response = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
 
     try:
-        saml_request = validator.validate(request.args['SAMLRequest'])
+        saml_request = validator.validate_login_request(request.args['SAMLRequest'])
     except SAMLValidationError as e:
         return abort(400)
 
-    user_session = stasher.lookup(session['user_id'])
+    session_id = session['session_id']
+    user_session = stasher.lookup_by_session_id(session_id)
     name_string = get_name_string(user_session)
 
     saml_response = create_saml_response(name_string, saml_request.id,
-        saml_request.assertion_consumer_service_url)
+        session_id, saml_request.assertion_consumer_service_url)
     based_response = base64.b64encode(saml_response.to_string())
 
     return render_template('redirect.html',
@@ -193,9 +228,9 @@ def post_login():
 
     try:
         user = backend.try_login(request.form['username'], request.form['password'])
-        user_id = backend.get_user_id(user)
-        stasher.stash(user_id, user)
-        session['user_id'] = user_id
+        session_id = generate_session_id()
+        session['session_id'] = session_id
+        stasher.stash(session_id, user)
         session['expires'] = datetime.today() + timedelta(hours=12)
     except IdentityError as e:
         print('An error occurred: {0}'.format(e))
@@ -209,6 +244,29 @@ def login():
     if request.method == 'GET':
         return get_login()
     return post_login()
+
+@app.route('/sso/logout/request', methods=['POST'])
+def logout_from_service_provider():
+    logout_request = request.data
+
+    try:
+        logout_request = validator.validate_logout_request(logout_request)
+    except Exception as e:
+        return abort(400)
+
+    try:
+        session_key = logout_request.session_index[0].text
+    except Exception as e:
+        return abort(400)
+
+    if not session_key:
+        return abort(400)
+
+    active_service_providers = stasher.logged_in_service_providers(session_key)
+    for sp in active_service_providers:
+        stasher.remove_service_provider_session(session_key, sp)
+
+
 
 def debug_enabled():
     return config.get('debug', {}).get('use_debugger', False)
