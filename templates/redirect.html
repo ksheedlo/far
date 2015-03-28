@@ -1,20 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="login__wrapper">
-  <div class="login__main">
-    <div class="login__heading">
-      <h3 class="login__title">FAR Redirect</h3>
-    </div>
-    <div class="login__body">
-      <strong>Redirecting...</strong>
-      <form action="{{ relay_state }}" method="post"
-        id="autosubmit">
-        <input type="hidden" value="{{ saml_response }}" id="SAMLResponse"
-          name="SAMLResponse">
-        <noscript>
-          <button type="submit" class="btn btn-primary">Continue</button>
-        </noscript>
-      </form>
+<div class="row">
+  <div class="col-sm-12 col-md-10 col-lg-8 col-md-offset-1 col-lg-offset-2">
+    <div class="login__outer">
+      <div class="login__widget">
+        <h1>FAR Redirect</h1>
+        <strong>Redirecting...</strong>
+        <form action="{{ relay_state }}" method="post"
+          id="autosubmit">
+          <input type="hidden" value="{{ saml_response }}" id="SAMLResponse"
+            name="SAMLResponse">
+          <noscript>
+            <button type="submit" class="btn btn-primary">Continue</button>
+          </noscript>
+        </form>
+      </div>
     </div>
   </div>
 </div>
