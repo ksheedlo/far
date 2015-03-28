@@ -20,6 +20,6 @@
     "tests"
   ],
   "dependencies": {
-    "bootstrap": "3.3.4"
+    "canon-bootstrap": "0.4.0"
   }
 }

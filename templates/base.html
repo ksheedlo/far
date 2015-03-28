@@ -2,15 +2,42 @@
 <html>
   <head>
     <title>FAR | FAR Ain't Reach</title>
-    <link rel="stylesheet" href="/static/components/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/components/canon-bootstrap/build/css/canon-bootstrap.min.css">
     <link rel="stylesheet" href="/static/css/main.css">
   </head>
   <body>
-    <div class="container">
-      <div class="row">
-        <div class="col-sm-12">
-          {% block content %}{% endblock %}
+    <div class="page__wrapper">
+      <nav class="navbar navbar-inverse navbar-static-top page__header">
+        <div class="container">
+          <div class="navbar-header">
+            <span class="navbar-brand">FAR</span>
+          </div>
+        </div>
+      </nav>
+      <div class="container">
+        <div class="row">
+          <div class="col-sm-12">
+            {% block content %}{% endblock %}
+          </div>
         </div>
       </div>
     </div>
+    <footer class="page__footer navbar navbar-inverse navbar-sm">
+      <div class="container">
+        <ul class="nav navbar-nav list-inline">
+          <li class="footer__link">
+            <a href="https://www.openstack.org">OpenStack</a>
+          </li>
+          <li class="footer__link">
+            <a href="https://www.rackspace.com">Rackspace</a>
+          </li>
+          <li class="footer__link">
+            <a href="https://www.twitter.com/kensheedlo">
+              Developed by @kensheedlo
+            </a>
+          </li>
+        </ul>
+      </div>
+    </footer>
+  </body>
 </html>
