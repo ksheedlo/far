@@ -8,13 +8,15 @@ import backends.identity
 import base64
 import json
 import os
-import urllib
+import requests
 import sys
+import urllib
 
 from backends.errors import IdentityError
 from datetime import datetime, timedelta
 from flask import (Flask, abort, redirect, render_template, request,
                     session, url_for)
+from helpers import find_where
 from xml.etree.ElementTree import ParseError as XMLParseError
 from saml2 import create_class_from_xml_string, class_name, samlp, saml, sigver
 from saml2 import VERSION as SAML2_VERSION
@@ -59,7 +61,7 @@ def get_name_string(user):
 def datetime_to_iso8601(dt):
     return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-def generate_session_id():
+def generate_far_id():
     return 'FAR-{0}'.format(uuid1())
 
 def generate_signature_id():
@@ -83,7 +85,7 @@ def create_saml_logout_request(issuer_url, session_id, username):
     issue_instant = datetime.utcnow()
 
     request = samlp.LogoutRequest()
-    request.id = generate_session_id()
+    request.id = generate_far_id()
     request.version = SAML2_VERSION
     request.issue_instant = datetime_to_iso8601(issue_instant)
     request.issuer = saml.Issuer(text=issuer_url)
@@ -93,6 +95,20 @@ def create_saml_logout_request(issuer_url, session_id, username):
     request.name_id = saml.NameID(format=saml.NAMEID_FORMAT_PERSISTENT, text=username)
     request.not_on_or_after = datetime_to_iso8601(issue_instant + timedelta(minutes=2))
     return sign_saml_document(request)
+
+def create_saml_logout_response(issuer_url, in_response_to):
+    issue_instant = datetime.utcnow()
+
+    response = samlp.LogoutResponse()
+    response.id = generate_far_id()
+    response.version = saml_version
+    response.issue_instant = datetime_to_iso8601(issue_instant)
+    response.issuer = saml.Issuer(text=issuer_url)
+    response.in_response_to = in_response_to
+    response.status = samlp.Status(status_code=samlp.StatusCode(value=samlp.STATUS_SUCCESS))
+    response = sign_saml_document(response)
+
+    return response
 
 def clean_assertion_extensions_attributes(attributes):
     # REACH: According to the W3 Spec (http://www.w3.org/TR/xmlschema-1/#xsi_nil),
@@ -169,6 +185,15 @@ def create_saml_response(name_string, request_id, session_id, service_url):
 
     return final_response
 
+def get_logout_response_url(issuer):
+    sp = find_where(config['service_providers'], { 'issuer': issuer })
+    if sp:
+        return sp['logout_response_endpoint']
+    return None
+
+def get_far_url():
+    return config['far_url']
+
 def post_sso():
     saml_request = request.form['SAMLRequest']
     relay_state = request.form['RelayState']
@@ -228,7 +253,7 @@ def post_login():
 
     try:
         user = backend.try_login(request.form['username'], request.form['password'])
-        session_id = generate_session_id()
+        session_id = generate_far_id()
         session['session_id'] = session_id
         stasher.stash(session_id, user)
         session['expires'] = datetime.today() + timedelta(hours=12)
@@ -262,11 +287,20 @@ def logout_from_service_provider():
     if not session_key:
         return abort(400)
 
-    active_service_providers = stasher.logged_in_service_providers(session_key)
-    for sp in active_service_providers:
-        stasher.remove_service_provider_session(session_key, sp)
+    logout_response = create_saml_logout_response(get_far_url(), logout_request.id)
+    logout_response_xml = logout_response.to_string()
+    based_logout_response = base64.b64encode(logout_response_xml)
 
+    issuer = logout_request.issuer.text
+    logout_url = get_logout_response_url(issuer)
 
+    try:
+        response = requests.post(logout_url, data=based_logout_response)
+    except Exception as e:
+        response = e
+
+    stasher.drop(session_key)
+    return redirect(url_for('login'))
 
 def debug_enabled():
     return config.get('debug', {}).get('use_debugger', False)

@@ -8,6 +8,7 @@
     "use_debugger": true,
     "use_reloader": true
   },
+  "far_url": "http://localhost:5000",
   "keys": {
     "ssl_cert": "keys/far.rax.io.crt",
     "ssl_key": "keys/far.rax.io.key"

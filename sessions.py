@@ -40,6 +40,9 @@ class MemoryStasher(object):
             return entry['service_providers']
         return []
 
+    def drop(self, session_id):
+        self._data = [d for d in self._data if d['session_id'] != session_id]
+
 class SessionStasher(object):
     def __init__(self, config):
         self._connection = sqlite3.connect(config.database or 'data/far.sqlite3')
