@@ -3,7 +3,7 @@ Helpful nice to haves for FAR.
 
 '''
 
-from uuid import uuid1
+import uuid
 
 def find_where(thingies, query):
     '''
@@ -30,11 +30,11 @@ def generate_far_id():
     Generates a unique identifier for a thing.
 
     '''
-    return 'FAR-{0}'.format(uuid1())
+    return 'FAR-{0}'.format(uuid.uuid1())
 
 def generate_signature_id():
     '''
     Generates a different kind of unique identifier.
 
     '''
-    return int(uuid1())
+    return int(uuid.uuid1())
