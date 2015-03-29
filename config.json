@@ -16,5 +16,8 @@
     "login_endpoint": "http://localhost:3000/saml/response",
     "logout_endpoint": "http://localhost:3000/saml/idp_logout",
     "logout_response_endpoint": "http://localhost:3000/saml/logout_response"
-  }]
+  }],
+  "session_store": {
+    "store": "memory"
+  }
 }

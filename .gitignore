@@ -1,5 +1,10 @@
 python_env/
-static/components/
+/src/far/static/components/
+
+/bin/
+/develop-eggs/
+/parts/
+/.installed.cfg
 
 *.pyc
 *.sqlite3
