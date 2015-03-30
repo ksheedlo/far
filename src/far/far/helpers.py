@@ -3,7 +3,11 @@ Helpful nice to haves for FAR.
 
 '''
 
+import urllib
+import urlparse
 import uuid
+
+from far.errors import BadMongoAuthCredentials
 
 def find_where(thingies, query):
     '''
@@ -38,3 +42,34 @@ def generate_signature_id():
 
     '''
     return int(uuid.uuid1())
+
+def _encode_uri_component(sss):
+    '''
+    Does proper Unicode-aware URL quoting.
+
+    '''
+    return urllib.quote(sss.encode('utf-8'))
+
+# pylint: disable=too-many-arguments
+def mongodb_connect_url(hostname, database, port=27017, username=None, password=None):
+    '''
+    Gets the URL for connecting to MongoDB.
+
+    '''
+    auth = ''
+    if username is not None:
+        if password is None:
+            raise BadMongoAuthCredentials('Must specify a password when specifying username!')
+        auth = _encode_uri_component(username) + ':' + _encode_uri_component(password) + '@'
+    elif password is not None:
+        raise BadMongoAuthCredentials('Must specify a username when specifying password!')
+
+    host = hostname
+    if port:
+        host = host + ':' + str(port)
+
+    return urlparse.urlunsplit(['mongodb',
+                                auth + host,
+                                '/' + database,
+                                '', ''])
+# pylint: enable=too-many-arguments

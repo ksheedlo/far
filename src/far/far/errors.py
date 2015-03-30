@@ -19,3 +19,11 @@ class SAMLValidationError(Exception):
     def __init__(self, message):
         Exception.__init__(self)
         self.message = message
+
+class BadMongoAuthCredentials(Exception):
+    '''
+    Exception class representing bad MongoDB auth credentials.
+
+    '''
+    def __init__(self, *args):
+        Exception.__init__(self, *args)

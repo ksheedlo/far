@@ -18,6 +18,7 @@ from saml2 import VERSION as SAML2_VERSION
 from uuid import uuid1
 from xml.etree.ElementTree import ParseError as XMLParseError
 
+# pylint: disable=interface-not-implemented
 # pylint: disable=too-many-instance-attributes,too-few-public-methods
 class SAMLSecurityConfig(object):
     '''
@@ -309,3 +310,4 @@ class SamlSSO(object):
         if srp:
             return srp['logout_response_endpoint']
         return None
+# pylint: disable=interface-not-implemented

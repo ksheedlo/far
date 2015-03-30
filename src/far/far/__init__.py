@@ -9,7 +9,6 @@ Licensed under MIT.
 
 import argparse
 import base64
-import far.sessions
 import json
 import os
 import requests
@@ -19,6 +18,9 @@ from datetime import datetime, timedelta
 from far.errors import IdentityError, SAMLValidationError
 from far.helpers import generate_far_id
 from far.identity import IdentityBackend
+from far.sessions import (flask_user_create_session, flask_user_session_data,
+                          session_interface_and_store_from_config,
+                          flask_user_has_valid_session)
 from far.sso import SamlSSO
 from flask import (Flask, abort, redirect, render_template, request,
                    session, url_for)
@@ -43,9 +45,13 @@ with open(args.config or 'config.json', 'r') as f:
 # Otherwise, it's created on the fly.
 app.secret_key = config.get('secret_key', os.urandom(24))
 
+session_interface, session_store = session_interface_and_store_from_config(
+    config['session_store'])
+if session_interface:
+    app.session_interface = session_interface
+
 identity = IdentityBackend(config)
 sso = SamlSSO(config)
-session_store = far.sessions.create_store_from_config(config)
 # pylint: enable=invalid-name
 
 def _get_name_string(user):
@@ -115,11 +121,7 @@ def post_sso():
     # Check if the user has a session. If the user has a valid session,
     # they are logged in and get the auto-POSTing login form. If they
     # are not logged in, they need to be redirected to the login page.
-    if not valid_session():
-        return redirect_to_login(saml_request, relay_state)
-
-    user_session = session_store.lookup_by_session_id(session['session_id'])
-    if user_session is None:
+    if not flask_user_has_valid_session(session, session_store):
         return redirect_to_login(saml_request, relay_state)
 
     return redirect(url_for('try_sso',
@@ -140,12 +142,11 @@ def get_sso():
     except SAMLValidationError:
         return abort(400)
 
-    session_id = session['session_id']
-    user_session = session_store.lookup_by_session_id(session_id)
+    user_session = flask_user_session_data(session, session_store)
     name_string = _get_name_string(user_session)
 
     saml_response = sso.create_saml_login_response(
-        name_string, saml_request.id, session_id,
+        name_string, saml_request.id, session['session_id'],
         saml_request.assertion_consumer_service_url)
     based_response = base64.b64encode(saml_response.to_string())
 
@@ -188,10 +189,7 @@ def post_login():
 
     try:
         user = identity.try_login(request.form['username'], request.form['password'])
-        session_id = generate_far_id()
-        session['session_id'] = session_id
-        session_store.create_session(session_id, user)
-        session['expires'] = datetime.today() + timedelta(hours=12)
+        flask_user_create_session(session, session_store, user)
     except IdentityError as ex:
         print 'An error occurred: {0}'.format(ex)
 
