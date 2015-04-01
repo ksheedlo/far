@@ -122,8 +122,10 @@ def post_sso():
     # they are logged in and get the auto-POSTing login form. If they
     # are not logged in, they need to be redirected to the login page.
     if not flask_user_has_valid_session(session, session_store):
+        app.logger.debug('[post_sso] User has no valid session. Redirecting to login.')
         return redirect_to_login(saml_request, relay_state)
 
+    app.logger.debug('[post_sso] User has a valid session. Redirecting to SSO.')
     return redirect(url_for('try_sso',
                             SAMLRequest=saml_request,
                             RelayState=relay_state))
@@ -140,8 +142,12 @@ def get_sso():
     try:
         saml_request = sso.validate_login_request(request.args['SAMLRequest'])
     except SAMLValidationError:
+        app.logger.warning(
+            '[get_sso] SAML login request validation failed for session: {0}'.format(
+                session['session_id']))
         return abort(400)
 
+    app.logger.debug('[get_sso] SAML login request validation passed.')
     user_session = flask_user_session_data(session, session_store)
     name_string = _get_name_string(user_session)
 
@@ -191,8 +197,10 @@ def post_login():
         user = identity.try_login(request.form['username'], request.form['password'])
         flask_user_create_session(session, session_store, user)
     except IdentityError as ex:
-        print 'An error occurred: {0}'.format(ex)
+        app.logger.warning('[post_login] Login error: {0}'.format(ex))
+        return abort(400)
 
+    app.logger.debug('[post_login] Login successful, redirecting to try SSO.')
     return redirect(url_for('try_sso',
                             SAMLRequest=saml_request,
                             RelayState=relay_state))
@@ -221,15 +229,21 @@ def logout_from_service_provider():
     # pylint: disable=broad-except
     try:
         logout_request = sso.validate_logout_request(logout_request)
-    except Exception:
+    except Exception as ex:
+        app.logger.warning(('[logout_from_service_provider] SAML logout request ' +
+            'validation failed because of an error: {0}').format(ex))
         return abort(400)
 
     try:
         session_key = logout_request.session_index[0].text
     except Exception:
+        app.logger.warning('[logout_from_service_provider] Logout failed because ' +
+            'it could not get the session key.')
         return abort(400)
 
     if not session_key:
+        app.logger.warning('[logout_from_service_provider] Logout failed because ' +
+            'the session key did not exist.')
         return abort(400)
 
     logout_response = sso.create_saml_logout_response(
@@ -242,12 +256,17 @@ def logout_from_service_provider():
 
     try:
         requests.post(logout_url, data=based_logout_response)
-    except Exception:
-        # ಠ_ಠ: should probably log something here
-        pass
+    except Exception as ex:
+        app.logger.warning(('An error occurred trying to send the logout response ' +
+            'to the Service Provider: {0}\nThe Service Provider was: {1}').format(
+                ex, issuer))
     # pylint: enable=broad-except
 
     session_store.destroy_session(session_key)
+    del session['session_id']
+
+    app.logger.debug(('[logout_from_service_provider] Logout of session {0} ' +
+        'successful. Redirecting to login page.').format(session_key))
     return redirect(url_for('login'))
 
 def main():

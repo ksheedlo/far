@@ -174,7 +174,9 @@ class SamlSSO(object):
         security_context = sigver.security_context(SAMLSecurityConfig(
             cert_file=service_provider['public_key']))
         try:
-            security_context.correctly_signed_authn_request(saml_request_xml)
+            security_context.crypto.validate_signature(
+                saml_request_xml, security_context.cert_file, 'pem',
+                'LogoutRequest', saml_request.id, 'ID')
         except sigver.SignatureError:
             raise SAMLValidationError(
                 ('No SSL configuration worked for service provider: {sp} with' +
