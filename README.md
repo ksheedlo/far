@@ -22,7 +22,7 @@ parameter, and this can be quite long.
 
 ```
 $ cd src/far
-$ gunicorn -e FAR_CONFIG=$FAR_CONFIG_DIR/config.json -w N -b 127.0.0.1:5000 --limit-request-line=8190 far:app
+$ gunicorn -e FAR_CONFIG=$FAR_CONFIG_DIR/config.json -k eventlet -w N -b 127.0.0.1:5000 --limit-request-line=8190 far:app
 ```
 
 Common development tasks
