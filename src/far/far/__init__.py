@@ -7,7 +7,6 @@ Copyright 2015, Ken Sheedlo
 Licensed under MIT.
 '''
 
-import argparse
 import base64
 import json
 import os
@@ -31,27 +30,22 @@ from flask import (Flask, abort, redirect, render_template, request,
 # setting global variables and having effecting operations in the top
 # of a module is bad, but in context we need to suppress the warning.
 # pylint: disable=invalid-name
-app = Flask(__name__)
+app = Flask('far')
 
-parser = argparse.ArgumentParser(description='Stupid SAML Identity Provider app.')
-parser.add_argument('--config', '-c', type=str,
-                    help='The location of the config file.')
-args = parser.parse_args()
-
-with open(args.config or 'config.json', 'r') as f:
-    config = json.load(f)
+with open(os.environ.get('FAR_CONFIG', 'config.json'), 'r') as f:
+    far_config = json.load(f)
 
 # The secret key is loaded from the config file if available.
 # Otherwise, it's created on the fly.
-app.secret_key = config.get('secret_key', os.urandom(24))
+app.secret_key = far_config.get('secret_key', os.urandom(24))
 
 session_interface, session_store = session_interface_and_store_from_config(
-    config['session_store'])
+    far_config['session_store'])
 if session_interface:
     app.session_interface = session_interface
 
-identity = IdentityBackend(config)
-sso = SamlSSO(config)
+identity = IdentityBackend(far_config)
+sso = SamlSSO(far_config)
 # pylint: enable=invalid-name
 
 def _get_name_string(user):
@@ -71,7 +65,7 @@ def _get_far_url():
     Gets the configured URL the service is supposed to be at.
 
     '''
-    return config['far_url']
+    return far_config['far_url']
 
 def debug_enabled(cfg):
     '''
@@ -273,6 +267,6 @@ def main():
     '''
     Runs the app in development mode.
     '''
-    app.run(use_debugger=debug_enabled(config),
-            use_reloader=reload_enabled(config),
-            debug=debug_enabled(config))
+    app.run(use_debugger=debug_enabled(far_config),
+            use_reloader=reload_enabled(far_config),
+            debug=debug_enabled(far_config))
