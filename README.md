@@ -13,6 +13,18 @@ $ python bootstrap.py
 $ ./bin/far
 ```
 
+## Running in gunicorn
+
+You'll want to configure MongoDB sessions when running more than 1 worker,
+since memory sessions are not shared. The `--limit-request-line` is necessary
+because SAML SSO interactions often send the entire encoded request as a GET
+parameter, and this can be quite long.
+
+```
+$ cd src/far
+$ gunicorn -e FAR_CONFIG=$FAR_CONFIG_DIR/config.json -w N -b 127.0.0.1:5000 --limit-request-line=8190 far:app
+```
+
 Common development tasks
 ------------------------
 
