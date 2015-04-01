@@ -231,19 +231,19 @@ def logout_from_service_provider():
         logout_request = sso.validate_logout_request(logout_request)
     except Exception as ex:
         app.logger.warning(('[logout_from_service_provider] SAML logout request ' +
-            'validation failed because of an error: {0}').format(ex))
+                            'validation failed because of an error: {0}').format(ex))
         return abort(400)
 
     try:
         session_key = logout_request.session_index[0].text
     except Exception:
         app.logger.warning('[logout_from_service_provider] Logout failed because ' +
-            'it could not get the session key.')
+                           'it could not get the session key.')
         return abort(400)
 
     if not session_key:
         app.logger.warning('[logout_from_service_provider] Logout failed because ' +
-            'the session key did not exist.')
+                           'the session key did not exist.')
         return abort(400)
 
     logout_response = sso.create_saml_logout_response(
@@ -258,15 +258,15 @@ def logout_from_service_provider():
         requests.post(logout_url, data=based_logout_response)
     except Exception as ex:
         app.logger.warning(('An error occurred trying to send the logout response ' +
-            'to the Service Provider: {0}\nThe Service Provider was: {1}').format(
-                ex, issuer))
+                            'to the Service Provider: {0}\nThe Service Provider was: {1}').format(
+                                ex, issuer))
     # pylint: enable=broad-except
 
     session_store.destroy_session(session_key)
     del session['session_id']
 
     app.logger.debug(('[logout_from_service_provider] Logout of session {0} ' +
-        'successful. Redirecting to login page.').format(session_key))
+                      'successful. Redirecting to login page.').format(session_key))
     return redirect(url_for('login'))
 
 def main():
