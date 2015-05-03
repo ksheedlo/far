@@ -1,0 +1,27 @@
+{
+  "backend": {
+    "backend": "identity",
+    "identity_endpoint": "https://identity.api.rackspacecloud.com"
+  },
+  "database": "data/far.sqlite3",
+  "far_url": "http://192.168.59.103:5000",
+  "keys": {
+    "ssl_cert": "keys/far.rax.io.crt",
+    "ssl_key": "keys/far.rax.io.key"
+  },
+  "service_providers": [{
+    "id": "cloud_intelligence_dev",
+    "issuer": "http://dev.intelligence.rackspace.com",
+    "public_key": "keys/sage-dev.crt",
+    "login_endpoint": "http://localhost:3000/saml/response",
+    "logout_endpoint": "http://localhost:3000/saml/idp_logout",
+    "logout_response_endpoint": "http://localhost:3000/saml/logout_response"
+  }],
+  "session_store": {
+    "store": "mongodb",
+    "options": {
+      "hostname": "far_db_1",
+      "db": "far-sessions"
+    }
+  }
+}

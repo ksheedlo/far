@@ -1,0 +1,9 @@
+web:
+  build: .
+  command: "gunicorn -b 0.0.0.0:5000 -e FAR_CONFIG=/srv/far/config-docker.json -k eventlet --limit-request-line=8190 -w 1 far:app"
+  links:
+    - db
+  ports:
+    - "5000:5000"
+db:
+  image: "mongo:2.6.9"
