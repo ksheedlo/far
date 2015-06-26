@@ -1,0 +1,18 @@
+far:
+  build: .
+  environment:
+    FAR_CONFIG:
+  volumes:
+    - .:/srv/far
+    - ./keys:/srv/far/keys
+    - ./config:/srv/far/config
+  ports:
+    - 5000:5000
+  links:
+    - mongo
+
+mongo:
+  image: mongo:2.4
+  command: mongod --rest
+  ports:
+    - 28017:28017

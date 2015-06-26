@@ -19,7 +19,7 @@ class IdentityBackend(object):
                                             ).get('identity_endpoint') or \
                                             'http://localhost:8900/identity'
 
-    def try_login(self, username, password):
+    def try_login(self, username, password, logger):
         '''
         Tries to log in to Keystone with the provided credentials.
 
@@ -38,6 +38,7 @@ class IdentityBackend(object):
             'accept': 'application/json',
             'content-type': 'application/json'
         }
+        logger.debug('-> POST {0}/v2.0/tokens'.format(self._identity_endpoint))
         req = requests.post('{0}/v2.0/tokens'.format(self._identity_endpoint),
                             data=payload, headers=headers)
         req.raise_for_status()

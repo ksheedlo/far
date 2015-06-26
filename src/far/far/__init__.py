@@ -8,9 +8,11 @@ Licensed under MIT.
 '''
 
 import base64
+import logging
 import json
 import os
 import requests
+import sys
 import urllib
 
 from datetime import datetime, timedelta
@@ -32,7 +34,13 @@ from flask import (Flask, abort, redirect, render_template, request,
 # pylint: disable=invalid-name
 app = Flask('far')
 
-with open(os.environ.get('FAR_CONFIG', 'config.json'), 'r') as f:
+app.logger.addHandler(logging.StreamHandler(sys.stdout))
+app.logger.setLevel(logging.DEBUG)
+
+config_file = os.environ.get('FAR_CONFIG', 'config.json')
+app.logger.debug('Loading config file {0}'.format(config_file))
+
+with open(config_file, 'r') as f:
     far_config = json.load(f)
 
 # The secret key is loaded from the config file if available.
@@ -188,7 +196,7 @@ def post_login():
     relay_state = request.args['RelayState']
 
     try:
-        user = identity.try_login(request.form['username'], request.form['password'])
+        user = identity.try_login(request.form['username'], request.form['password'], app.logger)
         flask_user_create_session(session, session_store, user)
     except IdentityError as ex:
         app.logger.warning('[post_login] Login error: {0}'.format(ex))
